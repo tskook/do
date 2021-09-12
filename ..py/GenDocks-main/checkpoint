@@ -1,2 +1,2 @@
-model_checkpoint_path: "C:\\Users\\u9133908\\Documents\\GitHub\\do\\..py\\GenDocks-main\\redpanda-0.001-2conv-basic.model"
-all_model_checkpoint_paths: "C:\\Users\\u9133908\\Documents\\GitHub\\do\\..py\\GenDocks-main\\redpanda-0.001-2conv-basic.model"
+model_checkpoint_path: "C:\\Users\\u9133908\\Documents\\GitHub\\do\\..py\\GenDocks-main\\redpandadetection-0.001-2conv-basic.model"
+all_model_checkpoint_paths: "C:\\Users\\u9133908\\Documents\\GitHub\\do\\..py\\GenDocks-main\\redpandadetection-0.001-2conv-basic.model"
