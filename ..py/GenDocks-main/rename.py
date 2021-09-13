@@ -1,5 +1,5 @@
 import os
-path = r'C:\Users\u9133908\Documents\GitHub\do\..py\GenDocks-main\not'
+path = r'C:\Users\u9133908\Documents\GitHub\do\..py\GenDocks-main\train\not'
 files = os.listdir(path)
 
 
