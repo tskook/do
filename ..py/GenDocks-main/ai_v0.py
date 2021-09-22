@@ -1,89 +1,91 @@
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Conv2D, MaxPooling2D, Flatten, Dropout
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import cv2
+import os
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-import PIL
-import tensorflow as tf
+import splitfolders 
 
-from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras.models import Sequential
 
-batch_size = 32
-img_height = 180
-img_width = 180
+input_dir = os.path.join('path/to/your/folder/flowers/')
+output_dir = os.path.join('path/to/your/folder/flowers_splitted/')
 
-img_dir = r'C:\Users\u9133908\Documents\GitHub\do\..py\GenDocks-main\train'
+splitfolders.ratio(input_dir, output=output_dir, seed=1337, ratio=(.8, .2), group_prefix=None)
 
-train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-  img_dir,
-  validation_split=0.2,
-  subset="training",
-  seed=123,
-  image_size=(img_height, img_width),
-  batch_size=batch_size)
 
-val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-  img_dir,
-  validation_split=0.2,
-  subset="validation",
-  seed=123,
-  image_size=(img_height, img_width),
-  batch_size=batch_size)
+def image_generator(train_parent_directory, test_parent_directory):
+    
+    train_datagen = ImageDataGenerator(rescale=1/255)
+    test_datagen = ImageDataGenerator(rescale=1/255)
+    
+    train_generator = train_datagen.flow_from_directory(train_parent_directory,
+                                  target_size = (75,75),
+                                  batch_size = 214,
+                                  class_mode = 'categorical',
+                                  subset='training')
+ 
+    
+    test_generator = test_datagen.flow_from_directory(test_parent_directory,
+                                 target_size=(75,75),
+                                 batch_size = 37,
+                                 class_mode = 'categorical')    
+    
+    return train_generator, test_generator
 
-class_names = train_ds.class_names
-AUTOTUNE = tf.data.AUTOTUNE
 
-train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
-val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
+train_generator, test_generator = image_generator(train_dir, test_dir)
 
-normalization_layer = layers.experimental.preprocessing.Rescaling(1./255)
-
-num_classes = 5
 
 model = Sequential([
-  layers.experimental.preprocessing.Rescaling(1./255, input_shape=(img_height, img_width, 3)),
-  layers.Conv2D(16, 3, padding='same', activation='relu'),
-  layers.MaxPooling2D(),
-  layers.Conv2D(32, 3, padding='same', activation='relu'),
-  layers.MaxPooling2D(),
-  layers.Conv2D(64, 3, padding='same', activation='relu'),
-  layers.MaxPooling2D(),
-  layers.Flatten(),
-  layers.Dense(128, activation='relu'),
-  layers.Dense(num_classes)
+    Conv2D(input_shape=(75,75,3), filters=8, kernel_size=16, activation='relu'),
+    MaxPooling2D(2,2),
+    
+    Conv2D(32, (3,3), activation='relu'),
+    MaxPooling2D(2,2),
+    
+    Conv2D(64, (3,3), activation='relu'),
+    MaxPooling2D(2,2),
+    
+    Conv2D(64, (3,3), activation='relu'),
+    MaxPooling2D(2,2),
+    
+    Flatten(),
+    Dense(512, activation='relu'),
+    Dropout(0.2),
+    Dense(units=6, activation='softmax')
 ])
+model.summary()
 
-model.compile(optimizer='adam',
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=['accuracy'])
-
-
-data_augmentation = keras.Sequential(
-  [
-    layers.experimental.preprocessing.RandomFlip("horizontal", 
-                                                 input_shape=(img_height, 
-                                                              img_width,
-                                                              3)),
-    layers.experimental.preprocessing.RandomRotation(0.1),
-    layers.experimental.preprocessing.RandomZoom(0.1),
-  ]
-)
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 
-test_path = r'C:\Users\u9133908\Documents\GitHub\do\..py\GenDocks-main\test\2.jpeg'
+def import_and_predict(image_data, label):
+    
+    #read image
+    img = cv2.imread(image_data)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) 
+    
+    #show the image
+    plt.imshow(img)
+    plt.axis('off')
+    
+    # resize and reshape the image
+    img_resize = (cv2.resize(img, dsize=(75, 75), interpolation=cv2.INTER_CUBIC))/255.
+    
+    img_reshape = img_resize[np.newaxis,...]
+    
+    #predict the image
+    prediction = model.predict(img_reshape)
+    print(prediction)
+    
+    label_prediction = label[np.argmax(prediction)]
+    
+    return label_prediction
 
-img = keras.preprocessing.image.load_img(
-    test_path, target_size=(img_height, img_width)
-)
-img_array = keras.preprocessing.image.img_to_array(img)
-img_array = tf.expand_dims(img_array, 0) # Create a batch
 
-predictions = model.predict(img_array)
-score = tf.nn.softmax(predictions[0])
-print(score)
-print(class_names)
-print(np.argmax(score))
-print(
-    "This image most likely belongs to {} with a {:.2f} percent confidence."
-    .format(class_names[np.argmax(score)], 100 * np.max(score))
-)
+label = os.listdir(test_dir)
+image1_dir = os.path.join(test_dir+'/1.jpeg')
+
+prediction = import_and_predict(image1_dir, label)
+print(prediction)
