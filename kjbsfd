@@ -1,0 +1,18 @@
+---
+- hosts: web
+  become: yes
+- tasks:
+    - name: Run a shell command and register its output as a variable
+      shell: echo (ls -t /var/lib/jenkins/step3/my_company_share/artifacts/* | head -1)
+      register: file
+    - name: create folder if not exist
+      file:
+        path: /var/www
+        state: directory
+        recurse: yes
+
+    - name: Unarchive Compressed Folder
+      unarchive:
+        src: "/var/lib/jenkins/step3/my_company_share/artifacts/{{ file }}"
+        dest: /var/www
+...
