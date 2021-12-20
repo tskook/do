@@ -1,0 +1,26 @@
+pipeline {
+agent {label 'linux'}
+
+
+
+stages {
+stage('Checkout') {
+steps {
+echo '*********CheckOut**********'
+checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'PerBuildTag']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'e771004f-7222-43af-b816-944f52b7e573', url: 'http://192.168.1.2/root/cloudika.git']]])
+}
+}
+stage('Archive') {
+steps {
+echo '**********Archive**********'
+sh 'tar -czvf /var/lib/jenkins/step3/my_company_share/artifacts/ClouDika_${currentBuild.number}.tar.gz /var/lib/jenkins/workspace/Bovi'
+}
+}
+stage('Deploy') {
+steps {
+echo '**********Deploy**********'
+ansiblePlaybook credentialsId: 'e771004f-7222-43af-b816-944f52b7e573', playbook: '/etc/ansible/deploy.yml'
+}
+}
+}
+}
